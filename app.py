@@ -5,6 +5,7 @@ from requests.exceptions import ProxyError, ConnectionError
 from bs4 import BeautifulSoup
 from flask_cors import CORS
 import os
+from urllib.parse import urlparse
 
 load_dotenv()
 
@@ -19,28 +20,44 @@ def scrape_website(url):
         
         # Realizar la solicitud GET al sitio web con proxies configurados
         response = requests.get(url)
-        print(response)
+        html = response.content
+        # print(response)
+        
+        parsed_url = urlparse(url)
+        dominio = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        # print(dominio)
 
         # Verificar si la solicitud fue exitosa (código de estado 200)
         if response.status_code == 200:
             # Parsear el contenido HTML de la página web
-            soup = BeautifulSoup(response.content, 'html.parser')
+            soup = BeautifulSoup(html, 'html.parser')
+            
+            # Esto es para obtener todos los links a los que se puede navegar desde esta url
+            links = []
+            for link in soup.find_all('a'):
+                if link.get('href') != None:
+                    links.append(link.get('href'))
+            
+            links_limpio = [f"{dominio}{elemento}" if elemento.startswith('/') else elemento for elemento in links if elemento[0] in ['/', 'h']]
+            # print(links_limpio)
+            
+            # Eliminar todos los enlaces <a> del HTML
+            for a_tag in soup.find_all('a'):
+                a_tag.decompose()
+                
+            page_text = soup.get_text().split("\n")
+            new_page_text = []
+            for i in page_text:
+                if i != '' and len(i) > 50:
+                    new_page_text.append(i.strip())
+            
+            new_page_text = ' '.join(new_page_text)
+            print(new_page_text)
 
-            # Buscar el contenedor principal que contiene el contenido del blog
-            main_content = soup.find("article")
 
-            # Si no se encuentra el contenedor principal, intentar buscar por otras etiquetas comunes
-            if not main_content:
-                main_content = soup.find("div", {"id": "content"})
-            if not main_content:
-                main_content = soup.find("div", {"class": "entry-content"})
-            if not main_content:
-                return "No se encontró el contenido principal en la página."
+            
+            return links_limpio, new_page_text
 
-            # Obtener todo el texto dentro del elemento <article>
-            article_text = main_content.get_text(separator='\n', strip=True)
-            # print(article_text)
-            return article_text
         else:
             # Si la solicitud no fue exitosa, imprimir un mensaje de error
             return f"Error al obtener la página: {response.status_code}"
