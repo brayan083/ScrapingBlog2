@@ -29,6 +29,7 @@ def scrape_website(url):
 
         # Verificar si la solicitud fue exitosa (código de estado 200)
         if response.status_code == 200:
+            
             # Parsear el contenido HTML de la página web
             soup = BeautifulSoup(html, 'html.parser')
             
@@ -74,14 +75,8 @@ def scrape_website(url):
             
             new_page_text = ' '.join(new_page_text)
             # print(new_page_text)
-            
-            print(page_title)
-            print(meta_description)
 
-
-            
-            # return links_limpio, new_page_text
-            return page_title, meta_description, h1_texts, h2_texts, h3_texts
+            return page_title, meta_description, h1_texts, h2_texts, h3_texts, links, new_page_text
 
         else:
             # Si la solicitud no fue exitosa, imprimir un mensaje de error
@@ -109,9 +104,21 @@ def scrape():
 
         # Llamar a la función scrape_website con la URL
         result = scrape_website(url)
+        print(result)
+        print(type(result))
+        
+        result_dict = {
+        'title': result[0],
+        'description': result[1],
+        'h1': result[2],
+        'h2': result[3],
+        'h3': result[4],
+        'links': result[5],
+        'text': result[6]
+        }
 
         # Devolver el resultado como JSON
-        return jsonify({"result":result})
+        return jsonify({"result":result_dict})
     else:
         return jsonify({'error': 'La clave "url" no se proporcionó en el cuerpo JSON'}, 400)
 
