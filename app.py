@@ -32,6 +32,27 @@ def scrape_website(url):
             # Parsear el contenido HTML de la página web
             soup = BeautifulSoup(html, 'html.parser')
             
+            # Obtener el título de la página
+            page_title = soup.title.string if soup.title else None
+            
+            # Obtener la meta descripción de la página
+            meta_description_tag = soup.find('meta', attrs={'name':'description'}) or \
+                                    soup.find('meta', attrs={'name':'Description'}) or \
+                                    soup.find('meta', attrs={'property':'og:description'})
+            meta_description = meta_description_tag['content'] if meta_description_tag else None
+            
+            # Obtener todas las etiquetas h1
+            h1_tags = soup.find_all('h1')
+            h1_texts = [tag.get_text() for tag in h1_tags]
+            
+            # Obtener todas las etiquetas h2
+            h2_tags = soup.find_all('h2')
+            h2_texts = [tag.get_text() for tag in h2_tags]
+
+            # Obtener todas las etiquetas h3
+            h3_tags = soup.find_all('h3')
+            h3_texts = [tag.get_text() for tag in h3_tags]
+            
             # Esto es para obtener todos los links a los que se puede navegar desde esta url
             links = []
             for link in soup.find_all('a'):
@@ -52,11 +73,15 @@ def scrape_website(url):
                     new_page_text.append(i.strip())
             
             new_page_text = ' '.join(new_page_text)
-            print(new_page_text)
+            # print(new_page_text)
+            
+            print(page_title)
+            print(meta_description)
 
 
             
-            return links_limpio, new_page_text
+            # return links_limpio, new_page_text
+            return page_title, meta_description, h1_texts, h2_texts, h3_texts
 
         else:
             # Si la solicitud no fue exitosa, imprimir un mensaje de error
