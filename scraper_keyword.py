@@ -1,41 +1,58 @@
-import requests
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
-def obtener_urls_posicionadas(keyword):
-    # Construir la URL de búsqueda de Google
-    url = f"https://www.google.com/search?q={keyword}"
+def obtener_hrefs(keyword):
+    
+    new_keyword = keyword.replace(' ', '+')
+    
+    url = f"https://www.google.com/search?q={new_keyword}"
+    # Configurar Selenium para que funcione en modo headless
+    opciones = Options()
+    opciones.headless = True
+    navegador = webdriver.Firefox(options=opciones)
 
-    # Definir los headers de la solicitud
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-    }
+    # Obtener el HTML de la página
+    navegador.get(url)
+    html = navegador.page_source
+    navegador.quit()
 
-    # Enviar la solicitud HTTP y obtener la página de resultados de búsqueda
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        # Parsear la página de resultados con BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
-        print('soy soup: ',soup)
-        
+    # Analizar el HTML con BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    # la etiqueta que tiene esta clase contiene los hrefs con las url de pago, las que dice "Anuncio" o "Publicidad" o "Patrocinado"
+    clase1 = 'Pm5mre'
+    
+    elementos1 = soup.find_all(class_=clase1)
+    
+    UrlsAnuncios = []
+    for elemento in elementos1:
+        for a in elemento.find_all('a'):
+            url = a.get('href')
+            if url not in UrlsAnuncios and url is not None and url.startswith(('http://', 'https://')) and len(url) <= 75:
+                UrlsAnuncios.append(url)
+    
+    
+    # la etiqueta que tiene esta clase contiene los hrefs con las url Organicas
+    clase = 'dURPMd'
 
-        
-    else:
-        print("Error al obtener la página de resultados de búsqueda.")
-        return None
+    # Buscar los elementos con la clase especificada
+    elementos = soup.find_all(class_=clase)
 
+    # Extraer los hrefs únicos y ordenados de los elementos
+    UrlsOrganicas = []
+    for elemento in elementos:
+        for a in elemento.find_all('a'):
+            url = a.get('href')
+            # este if gigante valida que la url no esté en la lista, que no sea None, que empiece con http o https y que tenga una longitud menor a 75 
+            if url not in UrlsOrganicas and url is not None and url.startswith(('http://', 'https://')) and len(url) <= 100:
+                UrlsOrganicas.append(url)
 
-res = obtener_urls_posicionadas("cajas")
-print('soy res: ',res)
+    return {"urls Anuncios":UrlsAnuncios, "Urls Organicas": UrlsOrganicas}
 
-# Ejemplo de uso
-# keyword = input("Ingresa una palabra clave: ")
-# urls_posicionadas = obtener_urls_posicionadas(keyword)
-# print(urls_posicionadas)
+# hrefs = obtener_hrefs('carton cajas')
+# print(hrefs)
 
-# if urls_posicionadas:
-#     print("Las URLs mejor posicionadas para la palabra clave '{}' son:".format(keyword))
-#     for i, (titulo, url) in enumerate(urls_posicionadas, start=1):
-#         print(f"{i}. Título: {titulo}")
-#         print(f"   URL: {url}\n")
-# else:
-#     print("No se encontraron resultados para la palabra clave proporcionada.")
+# # Imprimir los hrefs linea por linea
+# for href in hrefs:
+#     print(href)
