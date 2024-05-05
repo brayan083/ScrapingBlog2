@@ -9,7 +9,8 @@ def obtener_hrefs(keyword):
     url = f"https://www.google.com/search?q={new_keyword}"
     # Configurar Selenium para que funcione en modo headless
     opciones = Options()
-    opciones.headless = True
+    # opciones.headless = True
+    opciones.add_argument("--headless")
     navegador = webdriver.Firefox(options=opciones)
 
     # Obtener el HTML de la página
